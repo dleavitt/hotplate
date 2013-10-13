@@ -121,9 +121,54 @@ describe Hotplate::Command do
   end
 
   describe "#validate_options" do
-    it "raises an error when a required option is missing"
-    it "raises an error when an option is not among the choices"
-    it "raises an error when there are unknown options"
+    let(:ex_cls) { Hotplate::OptionsError }
+
+    describe "required" do
+      let(:cmd) { @ns.command(:cmd) { opts p1: { required: true } } }
+
+      it "does not raise an error when a required option is supplied" do
+        cmd.validate_options(p1: 1)[:p1].must_equal 1
+      end
+
+      it "raises an error when a required option is missing" do
+        ex = -> { cmd.validate_options({}) }.must_raise ex_cls 
+        ex.errors.p1.must_equal :required
+      end
+    end
+
+    describe "choices" do
+      let(:cmd) { @ns.command(:cmd) { opts p1: { choices: [1,2] } } }
+
+      it "does not raise an error when an option is among the choices" do
+        cmd.validate_options(p1: 1)[:p1].must_equal 1
+      end
+
+      it "raises an error when an option is not among the choices" do
+        ex = -> { cmd.validate_options(p1: 3) }.must_raise ex_cls
+        ex.errors.p1.must_equal :invalid
+      end
+
+      it "doesn't raise an error when an optional argument is omitted" do
+        cmd.validate_options({})[:p1].must_equal nil
+      end
+    end
+    
+    it "raises an error when there are unknown options" do
+      cmd = @ns.command(:cmd) { opts p1: { } }
+      ex = -> { cmd.validate_options(p2: 1) }.must_raise ex_cls
+      ex.errors.p2.must_equal :unknown
+    end
+
+    it "collects all errors when there are multiple" do
+      cmd = @ns.command :cmd do
+        opts p1: { required: true }, p2: { choices: [1,2] }
+      end
+
+      ex = -> { cmd.validate_options(p2: 3, p3: 1) }.must_raise ex_cls
+      ex.errors.p1.must_equal :required
+      ex.errors.p2.must_equal :invalid
+      ex.errors.p3.must_equal :unknown
+    end
   end
 
 

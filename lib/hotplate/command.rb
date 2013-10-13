@@ -25,7 +25,7 @@ module Hotplate
     end
 
     def defaults
-      Hashie::Mash.new Hash[opts.map { |n, m| [n, m[:default] || m["default"]] }]
+      Hashie::Mash.new Hash[opts.map { |n, m| [n, m[:default]] }]
     end
 
     def run(&block)
@@ -44,25 +44,19 @@ module Hotplate
     end
 
     def validate_options(options)
+      options = Hashie::Mash.new(options)
       errors = {}
 
       opts.each do |name, meta|
         if meta[:required] && options[name].nil?
-          errors[name] ||= []
-          errors[name] << :required
-        end
-
-        if meta[:choices] && ! meta[:choices].include?(options[name])
-          errors[name] ||= []
-          errors[name] << :invalid
+          errors[name] = :required
+        elsif ! options[name].nil? && meta[:choices] && ! meta[:choices].include?(options[name])
+          errors[name] = :invalid
         end
       end
 
       options.each do |name, value|
-        unless opts.has_key?(name)
-          errors[name] ||= []
-          errors[name] << :unknown
-        end
+        errors[name] = :unknown unless opts.has_key?(name)          
       end
 
       raise OptionsError.new(errors) if errors.any?
@@ -75,17 +69,11 @@ module Hotplate
     attr_accessor :errors
 
     def initialize(errors)
-      @errors = errors
+      @errors = Hashie::Mash.new(errors)
     end
 
     def to_s
-      msgs = errors.flat_map do |name, errors|
-        errors.map do |error|
-          "option '#{name}' is #{error}"
-        end
-      end
-
-      msgs.join(", ")
+      errors.map { |name, error| "option '#{name}' is #{error}" }.join(", ")
     end
   end
 end

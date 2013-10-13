@@ -17,7 +17,13 @@ module Hotplate
     end
 
     def call(ctx)
-      # TODO: generate some object that has all of the commands on it
+      o = Object.new
+      @commands.each do |name, cmd|
+        o.define_singleton_method name do |*args|
+          cmd.call(ctx, *args)
+        end
+      end
+      o
     end
   end
 end
