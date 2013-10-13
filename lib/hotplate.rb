@@ -1,5 +1,4 @@
 require "sshkit"
-require "pry" rescue ex
 require "yaml"
 require "hashie/mash"
 require "ostruct"
