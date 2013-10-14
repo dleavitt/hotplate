@@ -94,12 +94,6 @@ describe Hotplate::Base do
       @o.dsl2.must_respond_to :test2
     end
 
-    it "makes the commands callable" do
-      @o.dsl.must_respond_to :simple
-      @o.dsl.must_respond_to :complex
-      @o.dsl2.must_respond_to :test2
-    end
-
     it "calls the run block in the command with ctx and opts" do
       $simple_ran = nil
       $simple_self = nil
